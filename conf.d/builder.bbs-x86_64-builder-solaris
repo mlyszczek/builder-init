@@ -1,8 +1,0 @@
-QEMU_ARCH="x86_64"
-DRIVE_TYPE="ide"
-NET_IFNAME="qx64ss"
-NET_MODEL="e1000"
-NET_MAC="b0:fc:10:01:05:53"
-KVM="1"
-CPU="host,-x2apic"
-RAM_SIZE="1g"
