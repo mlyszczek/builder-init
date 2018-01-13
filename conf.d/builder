@@ -1,0 +1,4 @@
+IMAGES_DIR="/mnt/diskless-images"
+RAM_SIZE="256m"
+USER="qemu"
+GROUP="qemu"

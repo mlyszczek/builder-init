@@ -1,0 +1,95 @@
+#!/sbin/openrc-run
+
+VMNAME=${SVCNAME#*.}
+QEMU_EXEC="qemu-system-${QEMU_ARCH}"
+IMG_PATH="${IMAGES_DIR}/${VMNAME}"
+KVM=${KVM:="1"}
+
+
+if [ -f "${IMG_PATH}/kernel" ]
+then
+    KERNEL="-kernel ${IMG_PATH}/kernel"
+    APPEND="-append"
+    APPEND_ARGS="console=${CONSOLE} root=${ROOT}"
+else
+    # this is workaroud, as qemu doesn't accept empty "" and we need to
+    # feed it with something if kernel is not available, and APPEND_ARGS
+    # is unused. Duplicating -nographic has no effect
+    APPEND_ARGS="-nographic"
+fi
+
+if [ -f "${IMG_PATH}/dtb" ]
+then
+    DTB="-dtb ${IMG_PATH}/dtb"
+fi
+
+if [ ! -z "${MACHINE}" ]
+then
+    MACHINE="-machine ${MACHINE}"
+fi
+
+if [ ! -z "${CPU}" ]
+then
+    CPU="-cpu ${CPU}"
+fi
+
+if [ "${KVM}" = "1" ]
+then
+    KVM="--enable-kvm"
+else
+    KVM=""
+fi
+
+
+if [ "${NET_MODEL}" = "virtio-bus" ]
+then
+    NET="-device virtio-net-device,netdev=lan,mac=${NET_MAC} \
+        -netdev type=tap,script=no,ifname=${NET_IFNAME},id=lan"
+else
+    NET="-net tap,ifname=${NET_IFNAME},script=no,downscript=no \
+        -net nic,model=${NET_MODEL},macaddr=${NET_MAC}"
+fi
+
+if [ "${DRIVE_TYPE}" = "virtio" ] || [ "${DRIVE_TYPE}" = "ide" ]
+then
+    DRIVE="-drive file=${IMG_PATH}/rootfs,if=${DRIVE_TYPE},media=disk,format=raw,index=0"
+elif [ "${DRIVE_TYPE}" = "virtio-bus" ]
+then
+    DRIVE="-drive file=${IMG_PATH}/rootfs,if=none,media=disk,format=raw,id=sda \
+        -device virtio-scsi-device,id=scsi -device scsi-hd,drive=sda"
+elif [ "${DRIVE_TYPE}" = "sd" ]
+then
+    DRIVE="-sd ${IMG_PATH}/rootfs"
+fi
+
+start_pre() {
+    ebegin "Preparing log file /var/log/qemu/${VMNAME}"
+    mkdir -p /var/log/builder
+    touch /var/log/builder/${VMNAME}
+    chown ${USER}:${GROUP} /var/log/builder/${VMNAME}
+    eend $?
+}
+
+start() {
+    ebegin "Starting ${VMNAME} using ${QEMU_EXEC}"
+
+    start-stop-daemon --start --make-pidfile \
+        --pidfile /var/run/${VMNAME}.pid \
+        --background --name ${VMNAME} \
+        --user ${USER} --group ${GROUP} \
+        --stdout /var/log/builder/${VMNAME} \
+        --stderr /var/log/builder/${VMNAME} \
+        --exec ${QEMU_EXEC} -- \
+            ${KERNEL} ${APPEND} "${APPEND_ARGS}" ${DTB} \
+            ${MACHINE} ${CPU} ${KVM} ${CUSTOM_OPTS} \
+            -m ${RAM_SIZE} ${DRIVE} ${NET} \
+            -nographic -serial mon:stdio
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping ${VMNAME} qemu"
+    start-stop-daemon --stop --signal 15 --pidfile /var/run/${VMNAME}.pid
+    eend $?
+}

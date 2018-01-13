@@ -1,0 +1,7 @@
+QEMU_ARCH="i386"
+DRIVE_TYPE="virtio"
+NET_IFNAME="qx32lu"
+NET_MODEL="virtio"
+NET_MAC="b0:fc:10:01:05:09"
+CONSOLE="ttyS0"
+ROOT="/dev/vda"

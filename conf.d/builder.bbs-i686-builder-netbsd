@@ -1,0 +1,5 @@
+QEMU_ARCH="i386"
+DRIVE_TYPE="ide"
+NET_IFNAME="qx32nb"
+NET_MODEL="virtio"
+NET_MAC="b0:fc:10:01:05:52"

@@ -1,0 +1,8 @@
+QEMU_ARCH="mips"
+DRIVE_TYPE="virtio"
+NET_IFNAME="qmipslg"
+NET_MODEL="e1000"
+NET_MAC="b0:fc:10:01:05:10"
+CONSOLE="ttyS0"
+ROOT="/dev/vda"
+KVM="0"
